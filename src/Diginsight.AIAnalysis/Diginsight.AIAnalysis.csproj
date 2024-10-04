@@ -6,7 +6,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.AI.OpenAI" Version="2.*" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.*" />
+    <PackageReference Include="Diginsight.Core" Version="$(DiginsightCoreVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.*" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="8.*" />
+    <PackageReference Include="System.Linq.Async" Version="6.*" />
+    <PackageReference Include="Ulid" Version="1.*" />
+    <PackageReference Include="YamlDotNet.NetCore" Version="1.*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Diginsight.AIAnalysis.Abstractions\Diginsight.AIAnalysis.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Resources/**" />
+    <EmbeddedResource Include="Resources/**" />
   </ItemGroup>
 
 </Project>
