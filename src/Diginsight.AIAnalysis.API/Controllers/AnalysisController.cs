@@ -99,6 +99,22 @@ public class AnalysisController : ControllerBase
     }
 
     [HttpGet]
+    [Route("{analysisId:guid}/log")]
+    public async Task<IActionResult> GetLog([FromRoute] Guid analysisId)
+    {
+        Stream? summaryStream = await analysisService.TryGetLogStreamAsync(analysisId);
+        if (summaryStream is null)
+        {
+            return new NotFoundResult();
+        }
+
+        return new FileStreamResult(summaryStream, MediaTypeNames.Text.Plain)
+        {
+            FileDownloadName = Request.Query.ContainsKey("download") ? $"{analysisId:N}.log" : null,
+        };
+    }
+
+    [HttpGet]
     [Route("{analysisId:guid}/summary")]
     public async Task<IActionResult> GetSummary([FromRoute] Guid analysisId)
     {

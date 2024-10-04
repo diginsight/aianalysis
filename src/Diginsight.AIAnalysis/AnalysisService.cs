@@ -202,7 +202,7 @@ internal sealed class AnalysisService : IAnalysisService
 
     public Task ConsolidateAsync(Guid analysisId, string title, CancellationToken cancellationToken)
     {
-        async Task ConsolidateAsync(string extension)
+        async Task CoreConsolidateAsync(string extension)
         {
             BlobClient sourceBlobClient = (await TryGetBlobClientAsync(analysisId, extension, cancellationToken))!;
             IDictionary<string, string> sourceMetadata = (await sourceBlobClient.GetPropertiesAsync(cancellationToken: cancellationToken)).Value.Metadata;
@@ -214,7 +214,7 @@ internal sealed class AnalysisService : IAnalysisService
             await WriteBlobAsync(timestamp, analysisId, (title, blobNameFormat), extension, sourceStream, cancellationToken);
         }
 
-        return Task.WhenAll(ConsolidateAsync(LogExtension), ConsolidateAsync(SummaryExtension));
+        return Task.WhenAll(CoreConsolidateAsync(LogExtension), CoreConsolidateAsync(SummaryExtension));
     }
 
     public Task<Stream?> TryGetLogStreamAsync(Guid analysisId, CancellationToken cancellationToken)
