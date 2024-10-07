@@ -1,6 +1,4 @@
-﻿using Diginsight.AIAnalysis.API.Services;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Console;
 using ILoggerProvider = Microsoft.Extensions.Logging.ILoggerProvider;
 
@@ -30,17 +28,13 @@ internal static class Program
             .Configure<ApiBehaviorOptions>(static o => { o.SuppressMapClientErrors = true; });
 
         services.AddAIAnalysis(configuration.GetSection("Analysis").Bind);
-        services.TryAddScoped<IInnerAnalysisService, InnerAnalysisService>();
 
         WebApplication application = applicationBuilder.Build();
 
         application.UseRouting();
 
         application.UseEndpoints(
-            static endpoint =>
-            {
-                endpoint.MapControllers();
-            }
+            static endpoint => { endpoint.MapControllers(); }
         );
 
         // ReSharper disable once AsyncApostle.AsyncAwaitMayBeElidedHighlighting

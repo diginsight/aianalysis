@@ -1,8 +1,8 @@
-﻿using Diginsight.AIAnalysis.API.Services;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Mime;
 using System.Text;
 
@@ -100,13 +100,16 @@ public class AnalysisController : ControllerBase
         }
 
         TaskUtils.RunAndForget(
-            async () =>
+            [SuppressMessage("ReSharper", "MethodSupportsCancellation")] async () =>
             {
                 using IServiceScope serviceScope = serviceScopeFactory.CreateScope();
                 IServiceProvider serviceProvider = serviceScope.ServiceProvider;
-                IInnerAnalysisService innerAnalysisService = serviceProvider.GetRequiredService<IInnerAnalysisService>();
+                // ReSharper disable once LocalVariableHidesMember
+                IAnalysisService analysisService = serviceProvider.GetRequiredService<IAnalysisService>();
 
-                await innerAnalysisService.AnalyzeAsync(finalTimestamp, analysisId, logContent, placeholders);
+                string title = await analysisService.AnalyzeAsync(finalTimestamp, analysisId, logContent, placeholders);
+
+                await analysisService.ConsolidateAsync(analysisId, title);
             },
             cancellationToken
         );
