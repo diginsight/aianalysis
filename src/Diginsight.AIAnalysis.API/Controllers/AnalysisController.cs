@@ -28,23 +28,39 @@ public class AnalysisController : ControllerBase
     }
 
     [HttpPost]
+    [Consumes("multipart/form-data")]
     public async Task<IActionResult> Analyze(
-        [FromForm(Name = "log")] IFormFile logFile,
-        [FromForm(Name = "placeholders")] IFormFile placeholdersFile,
+        [FromForm(Name = "log")] IFormFile? logFile,
+        [FromForm(Name = "placeholders")] IFormFile? placeholdersFile,
         [FromQuery] DateTime? timestamp
     )
     {
         CancellationToken cancellationToken = HttpContext.RequestAborted;
 
+        if (logFile is null)
+        {
+            return Problem("Part 'log' missing", statusCode: StatusCodes.Status400BadRequest);
+        }
+        if (placeholdersFile is null)
+        {
+            return Problem("Part 'placeholders' missing", statusCode: StatusCodes.Status400BadRequest);
+        }
+
         if (!MediaTypeHeaderValue.TryParse(logFile.ContentType, out MediaTypeHeaderValue? logMediaType)
             || logMediaType.MediaType != MediaTypeNames.Text.Plain)
         {
-            return new UnsupportedMediaTypeResult();
+            return Problem(
+                $"Media type of part 'log' is not {MediaTypeNames.Text.Plain}",
+                statusCode: StatusCodes.Status415UnsupportedMediaType
+            );
         }
         if (!MediaTypeHeaderValue.TryParse(placeholdersFile.ContentType, out MediaTypeHeaderValue? placeholdersMediaType)
             || placeholdersMediaType.MediaType != MediaTypeNames.Application.Json)
         {
-            return new UnsupportedMediaTypeResult();
+            return Problem(
+                $"Media type of part 'placeholders' is not {MediaTypeNames.Application.Json}",
+                statusCode: StatusCodes.Status415UnsupportedMediaType
+            );
         }
 
         IReadOnlyDictionary<string, object?> placeholders;
@@ -74,7 +90,7 @@ public class AnalysisController : ControllerBase
 
             tempLogStream.Position = 0;
             Encoding logEncoding = logMediaType.Encoding ?? Encoding.UTF8;
-            using (TextReader logTextReader = new StreamReader(tempLogStream, logEncoding))
+            using (TextReader logTextReader = new StreamReader(tempLogStream, logEncoding, leaveOpen: true))
             {
                 logContent = await logTextReader.ReadToEndAsync(cancellationToken);
             }

@@ -3,7 +3,8 @@
 using System.Runtime.CompilerServices;
 #endif
 
-namespace Diginsight.AIAnalysis;
+// ReSharper disable once CheckNamespace
+namespace System.IO;
 
 [EditorBrowsable(EditorBrowsableState.Never)]
 internal static class Polyfills

@@ -2,11 +2,10 @@
   "profiles": {
     "Diginsight.AIAnalysis.API": {
       "commandName": "Project",
-      "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "http://localhost:59339"
+      "applicationUrl": "http://localhost:39324"
     }
   }
 }

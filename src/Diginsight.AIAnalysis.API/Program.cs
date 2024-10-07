@@ -1,6 +1,8 @@
 ﻿using Diginsight.AIAnalysis.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging.Console;
+using ILoggerProvider = Microsoft.Extensions.Logging.ILoggerProvider;
 
 namespace Diginsight.AIAnalysis.API;
 
@@ -14,15 +16,25 @@ internal static class Program
 
         IServiceCollection services = applicationBuilder.Services;
 
+        foreach (ServiceDescriptor sd in services.Where(x => x.ServiceType == typeof(ILoggerProvider)).ToArray())
+        {
+            if (sd.ImplementationType == typeof(ConsoleLoggerProvider))
+                continue;
+
+            services.Remove(sd);
+        }
+
         services.AddControllers();
 
         services
             .Configure<ApiBehaviorOptions>(static o => { o.SuppressMapClientErrors = true; });
 
-        services.AddAIAnalysis(configuration.GetSection("AIAnalysis").Bind);
+        services.AddAIAnalysis(configuration.GetSection("Analysis").Bind);
         services.TryAddScoped<IInnerAnalysisService, InnerAnalysisService>();
 
         WebApplication application = applicationBuilder.Build();
+
+        application.UseRouting();
 
         application.UseEndpoints(
             static endpoint =>

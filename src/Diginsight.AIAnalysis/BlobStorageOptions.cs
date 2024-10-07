@@ -15,12 +15,12 @@ public sealed class BlobStorageOptions : IBlobStorageOptions
     string IBlobStorageOptions.ContainerPath => ContainerPath ?? throw new InvalidOperationException($"{nameof(ContainerPath)} is unset");
 
     [PublicAPI]
-    public string? UntitledBlobNameFormat { get; set; } = "{0:yy}/{0:MM}/{0:dd}/{1}";
+    public string? UntitledBlobNameFormat { get; set; } = "{0:yyyy}/{0:MM}/{0:dd}/{1}";
 
     string IBlobStorageOptions.UntitledBlobNameFormat => UntitledBlobNameFormat ?? throw new InvalidOperationException($"{nameof(UntitledBlobNameFormat)} is unset");
 
     [PublicAPI]
-    public string? TitledBlobNameFormat { get; set; } = "{0:yy}/{0:MM}/{0:dd}/{1}";
+    public string? TitledBlobNameFormat { get; set; } = "{0:yyyy}/{0:MM}/{0:dd}/{1}";
 
     string IBlobStorageOptions.TitledBlobNameFormat => TitledBlobNameFormat ?? throw new InvalidOperationException($"{nameof(TitledBlobNameFormat)} is unset");
 }

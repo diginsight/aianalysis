@@ -11,6 +11,8 @@ internal sealed class InnerAnalysisService : IInnerAnalysisService
 
     public async Task AnalyzeAsync(DateTime timestamp, Guid analysisId, string logContent, IReadOnlyDictionary<string, object?> placeholderDict)
     {
-        throw new NotImplementedException();
+        string title = await analysisService.AnalyzeAsync(timestamp, analysisId, logContent, placeholderDict);
+
+        await analysisService.ConsolidateAsync(analysisId, title);
     }
 }

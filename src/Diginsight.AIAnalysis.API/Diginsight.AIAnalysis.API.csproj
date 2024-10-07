@@ -3,7 +3,15 @@
   <PropertyGroup>
     <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
     <Title>Diginsight AI Analysis API</Title>
+    <NoWarn>ASP0014</NoWarn>
+    <UserSecretsId>3e52847e-c95b-42f0-99bc-1b1178214e34</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Diginsight.AIAnalysis\Polyfills.cs">
+      <Link>Polyfills.cs</Link>
+    </Compile>
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Diginsight.AIAnalysis\Diginsight.AIAnalysis.csproj" />

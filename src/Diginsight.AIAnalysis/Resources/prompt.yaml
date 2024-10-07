@@ -3,7 +3,7 @@
     Your goal is to write a HTML page with a human-readable summary that explains what is happening into a method execution described by a text log.
 
     Rules:
-    - The output must always be in html with a valid HTML syntax. The output must not begin with "```html".
+    - The output must always be in HTML with a valid HTML syntax. The output must not begin with "```html".
 
     - The output must always start with a title with one line short description of the problem (eg. "ISSUE: CreateApplication method fails as application already exists"), where:
       - the title prefix should be "ISSUE", "WARNING" or "SUCCESS" according to the type of flow;
@@ -125,7 +125,7 @@
           padding: 15px 0px 15px 10px;
           font-size: 14px;
           border-radius: 10px;
-          width: 100%;
+          width: 100%%;
         }
         .content li a {
           color: #007BFF;
@@ -159,3 +159,11 @@
     Summarize the following log:
 
     %LogContent%
+---
+- Role: System
+  Content: |
+    When asked for a detail of the analysis performed, just answer with such detail, without any introduction or formatting (either HTML or Markdown).
+
+- Role: User
+  Content: |
+    Which is the title of the last analysis performed?
