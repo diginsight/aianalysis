@@ -2,7 +2,6 @@
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Diagnostics.CodeAnalysis;
 using System.Net.Mime;
 using System.Text;
 
@@ -11,27 +10,28 @@ namespace Diginsight.AIAnalysis.API.Controllers;
 [Route("analysis")]
 public class AnalysisController : ControllerBase
 {
+    private const string? LogFormPartName = "log";
+    private const string? PlaceholdersFormPartName = "placeholders";
+
     private static readonly JsonSerializer JsonSerializer = JsonSerializer.CreateDefault(
         new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.Auto }
     );
 
     private readonly IAnalysisService analysisService;
-    private readonly IServiceScopeFactory serviceScopeFactory;
 
     public AnalysisController(
-        IAnalysisService analysisService,
-        IServiceScopeFactory serviceScopeFactory
+        IAnalysisService analysisService
     )
     {
         this.analysisService = analysisService;
-        this.serviceScopeFactory = serviceScopeFactory;
     }
 
     [HttpPost]
     [Consumes("multipart/form-data")]
+    [Produces(MediaTypeNames.Text.Plain, Type = typeof(Guid))]
     public async Task<IActionResult> Analyze(
-        [FromForm(Name = "log")] IFormFile? logFile,
-        [FromForm(Name = "placeholders")] IFormFile? placeholdersFile,
+        [FromForm(Name = LogFormPartName)] IFormFile? logFile,
+        [FromForm(Name = PlaceholdersFormPartName)] IFormFile? placeholdersFile,
         [FromQuery] DateTime? timestamp
     )
     {
@@ -39,18 +39,18 @@ public class AnalysisController : ControllerBase
 
         if (logFile is null)
         {
-            return Problem("Part 'log' missing", statusCode: StatusCodes.Status400BadRequest);
+            return Problem($"Part '{LogFormPartName}' missing", statusCode: StatusCodes.Status400BadRequest);
         }
         if (placeholdersFile is null)
         {
-            return Problem("Part 'placeholders' missing", statusCode: StatusCodes.Status400BadRequest);
+            return Problem($"Part '{PlaceholdersFormPartName}' missing", statusCode: StatusCodes.Status400BadRequest);
         }
 
         if (!MediaTypeHeaderValue.TryParse(logFile.ContentType, out MediaTypeHeaderValue? logMediaType)
             || logMediaType.MediaType != MediaTypeNames.Text.Plain)
         {
             return Problem(
-                $"Media type of part 'log' is not {MediaTypeNames.Text.Plain}",
+                $"Media type of part '{LogFormPartName}' is not {MediaTypeNames.Text.Plain}",
                 statusCode: StatusCodes.Status415UnsupportedMediaType
             );
         }
@@ -58,7 +58,7 @@ public class AnalysisController : ControllerBase
             || placeholdersMediaType.MediaType != MediaTypeNames.Application.Json)
         {
             return Problem(
-                $"Media type of part 'placeholders' is not {MediaTypeNames.Application.Json}",
+                $"Media type of part '{PlaceholdersFormPartName}' is not {MediaTypeNames.Application.Json}",
                 statusCode: StatusCodes.Status415UnsupportedMediaType
             );
         }
@@ -78,74 +78,57 @@ public class AnalysisController : ControllerBase
                 .ToDictionary(static x => x.Key, static x => x.Value.ToObject<object?>(JsonSerializer), StringComparer.OrdinalIgnoreCase);
         }
 
-        analysisService.LabelAnalysis(timestamp, out DateTime finalTimestamp, out Guid analysisId);
-
-        string logContent;
-        using (MemoryStream tempLogStream = new ())
+        IPartialAnalysisResult partialAnalysisResult;
+        await using (Stream logStream = logFile.OpenReadStream())
         {
-            await using (Stream logStream = logFile.OpenReadStream())
-            {
-                await logStream.CopyToAsync(tempLogStream, cancellationToken);
-            }
-
-            tempLogStream.Position = 0;
             Encoding logEncoding = logMediaType.Encoding ?? Encoding.UTF8;
-            using (TextReader logTextReader = new StreamReader(tempLogStream, logEncoding, leaveOpen: true))
-            {
-                logContent = await logTextReader.ReadToEndAsync(cancellationToken);
-            }
-
-            tempLogStream.Position = 0;
-            await analysisService.WriteLogAsync(finalTimestamp, analysisId, tempLogStream, cancellationToken);
+            partialAnalysisResult = await analysisService.StartAnalyzeAsync(logStream, logEncoding, placeholders, timestamp, cancellationToken);
         }
 
-        TaskUtils.RunAndForget(
-            [SuppressMessage("ReSharper", "MethodSupportsCancellation")] async () =>
-            {
-                using IServiceScope serviceScope = serviceScopeFactory.CreateScope();
-                IServiceProvider serviceProvider = serviceScope.ServiceProvider;
-                // ReSharper disable once LocalVariableHidesMember
-                IAnalysisService analysisService = serviceProvider.GetRequiredService<IAnalysisService>();
+        return new OkObjectResult(partialAnalysisResult.Id.ToString("D")) { ContentTypes = { MediaTypeNames.Text.Plain } };
+    }
 
-                string title = await analysisService.AnalyzeAsync(finalTimestamp, analysisId, logContent, placeholders);
-
-                await analysisService.ConsolidateAsync(analysisId, title);
-            },
-            cancellationToken
-        );
-
-        return new OkObjectResult(analysisId.ToString("D")) { ContentTypes = { MediaTypeNames.Text.Plain } };
+    [HttpGet]
+    [Route("{analysisId:guid}/title")]
+    [Produces(MediaTypeNames.Text.Plain)]
+    public async Task<IActionResult> GetTitle([FromRoute] Guid analysisId)
+    {
+        return await analysisService.TryGetTitleAsync(analysisId, HttpContext.RequestAborted) is { } title
+            ? new OkObjectResult(title) { ContentTypes = { MediaTypeNames.Text.Plain } }
+            : new NotFoundResult();
     }
 
     [HttpGet]
     [Route("{analysisId:guid}/log")]
-    public async Task<IActionResult> GetLog([FromRoute] Guid analysisId)
+    [Produces(MediaTypeNames.Text.Plain)]
+    public Task<IActionResult> GetLog([FromRoute] Guid analysisId)
     {
-        Stream? summaryStream = await analysisService.TryGetLogStreamAsync(analysisId);
-        if (summaryStream is null)
-        {
-            return new NotFoundResult();
-        }
-
-        return new FileStreamResult(summaryStream, MediaTypeNames.Text.Plain)
-        {
-            FileDownloadName = Request.Query.ContainsKey("download") ? $"{analysisId:N}.log" : null,
-        };
+        return GetStreamAndEncodingAsync(analysisId, analysisService.TryGetLogAsync, MediaTypeNames.Text.Plain, "log");
     }
 
     [HttpGet]
     [Route("{analysisId:guid}/summary")]
-    public async Task<IActionResult> GetSummary([FromRoute] Guid analysisId)
+    [Produces(MediaTypeNames.Text.Html)]
+    public Task<IActionResult> GetSummary([FromRoute] Guid analysisId)
     {
-        Stream? summaryStream = await analysisService.TryGetSummaryStreamAsync(analysisId);
-        if (summaryStream is null)
+        return GetStreamAndEncodingAsync(analysisId, analysisService.TryGetSummaryAsync, MediaTypeNames.Text.Html, "html");
+    }
+
+    private async Task<IActionResult> GetStreamAndEncodingAsync(
+        Guid analysisId,
+        Func<Guid, CancellationToken, Task<(Stream, Encoding)?>> coreGetStreamAsync,
+        string mediaType,
+        string extension
+    )
+    {
+        if (await coreGetStreamAsync(analysisId, HttpContext.RequestAborted) is not var (stream, encoding))
         {
             return new NotFoundResult();
         }
 
-        return new FileStreamResult(summaryStream, MediaTypeNames.Text.Html)
+        return new FileStreamResult(stream, new MediaTypeHeaderValue(mediaType) { Charset = encoding.WebName })
         {
-            FileDownloadName = Request.Query.ContainsKey("download") ? $"{analysisId:N}.html" : null,
+            FileDownloadName = Request.Query.ContainsKey("download") ? $"{analysisId:N}.{extension}" : null,
         };
     }
 }

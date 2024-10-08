@@ -14,7 +14,7 @@ internal static class Program
 
         IServiceCollection services = applicationBuilder.Services;
 
-        foreach (ServiceDescriptor sd in services.Where(x => x.ServiceType == typeof(ILoggerProvider)).ToArray())
+        foreach (ServiceDescriptor sd in services.Where(static x => x.ServiceType == typeof(ILoggerProvider)).ToArray())
         {
             if (sd.ImplementationType == typeof(ConsoleLoggerProvider))
                 continue;

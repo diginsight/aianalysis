@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
     {
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IAnalysisService, AnalysisService>();
+        services.TryAddSingleton<IInternalAnalysisService, InternalAnalysisService>();
 
         if (configureAnalysisOptions is not null)
         {

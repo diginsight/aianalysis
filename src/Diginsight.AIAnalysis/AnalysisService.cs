@@ -1,334 +1,109 @@
-﻿using Azure.AI.OpenAI;
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
-using Azure.Storage.Blobs.Specialized;
-using JetBrains.Annotations;
-using Microsoft.Extensions.Options;
-using OpenAI.Chat;
-using System.ClientModel;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Text.RegularExpressions;
-using YamlDotNet.Core;
-using YamlDotNet.Core.Events;
-using YamlDotNet.Serialization;
+﻿using System.Text;
 
 namespace Diginsight.AIAnalysis;
 
 internal sealed class AnalysisService : IAnalysisService
 {
-    private const string AnalysisIdTagKey = "aid";
-    private const string ExtensionTagKey = "ext";
-    private const string TimestampMetadataKey = "ts";
-    private const string FormatMetadataKey = "fmt";
+    private readonly IInternalAnalysisService internalAnalysisService;
 
-    private const string LogExtension = "log";
-    private const string SummaryExtension = "html";
-
-    private static readonly Regex GoodPlaceholderRegex = new ("%([^,:%]+?)(,\\d+?)?(:[^%]+?)?%");
-    private static readonly Regex BadPlaceholderRegex = new ("%([^%]+?)%");
-
-    private readonly TimeProvider timeProvider;
-    private readonly ChatClient chatClient;
-    private readonly BlobContainerClient blobContainerClient;
-    private readonly string untitledBlobNameFormat;
-    private readonly string titledBlobNameFormat;
-
-    private IList<IEnumerable<YMessage>>? yMessageGroups;
-
-    private IList<IEnumerable<YMessage>> YMessageGroups => LazyInitializer.EnsureInitialized(ref yMessageGroups, MakeYMessageGroups)!;
-
-    public AnalysisService(
-        TimeProvider timeProvider,
-        IOptions<AnalysisOptions> analysisOptions
-    )
+    public AnalysisService(IInternalAnalysisService internalAnalysisService)
     {
-        IAnalysisOptions analysisOptions0 = analysisOptions.Value;
-        IOpenAIOptions openaiOptions = analysisOptions0.OpenAI;
-        IBlobStorageOptions blobStorageOptions = analysisOptions0.BlobStorage;
-
-        this.timeProvider = timeProvider;
-        chatClient = new AzureOpenAIClient(openaiOptions.Endpoint, new ApiKeyCredential(openaiOptions.ApiKey))
-            .GetChatClient(openaiOptions.Model);
-        blobContainerClient = new BlobServiceClient(blobStorageOptions.ConnectionString)
-            .GetBlobContainerClient(blobStorageOptions.ContainerPath);
-
-        untitledBlobNameFormat = blobStorageOptions.UntitledBlobNameFormat;
-        titledBlobNameFormat = blobStorageOptions.TitledBlobNameFormat;
+        this.internalAnalysisService = internalAnalysisService;
     }
 
-    private static IList<IEnumerable<YMessage>> MakeYMessageGroups()
-    {
-        Deserializer deserializer = new DeserializerBuilder().Build();
-
-        using Stream promptStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(AnalysisService), "Resources.prompt.yaml")!;
-        using TextReader promptReader = new StreamReader(promptStream, Encoding.UTF8);
-
-        Parser parser = new (promptReader);
-        parser.Expect<StreamStart>();
-
-        IList<IEnumerable<YMessage>> yMessageGroups = new List<IEnumerable<YMessage>>();
-        while (parser.Accept<DocumentStart>())
-        {
-            yMessageGroups.Add(deserializer.Deserialize<IEnumerable<YMessage>>(parser));
-        }
-
-        return yMessageGroups;
-    }
-
-    public void LabelAnalysis(DateTime? maybeTimestamp, out DateTime timestamp, out Guid analysisId)
-    {
-        timestamp = maybeTimestamp ?? timeProvider.GetUtcNow().UtcDateTime;
-        analysisId = Ulid.NewUlid(timestamp).ToGuid();
-    }
-
-    public async Task WriteLogAsync(DateTime timestamp, Guid analysisId, Stream stream, CancellationToken cancellationToken)
-    {
-        _ = await CreateBlobAsync(timestamp, analysisId, null, LogExtension, stream, cancellationToken);
-    }
-
-    private async Task<AppendBlobClient> CreateBlobAsync(
-        DateTime timestamp,
-        Guid analysisId,
-        string? blobName,
-        string extension,
-        Stream? stream,
+    public async Task<IPartialAnalysisResult> StartAnalyzeAsync(
+        Stream logStream,
+        Encoding logEncoding,
+        IReadOnlyDictionary<string, object?> placeholders,
+        DateTime? timestamp,
         CancellationToken cancellationToken
     )
     {
-        await blobContainerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
+        (IPartialAnalysisResult partialAnalysisResult, string logContent) =
+            await CoreStartAnalyzeAsync(logStream, logEncoding, timestamp, cancellationToken);
 
-        string finalBlobName = blobName ?? string.Format(CultureInfo.InvariantCulture, untitledBlobNameFormat, timestamp, analysisId);
-        AppendBlobClient blobClient = blobContainerClient.GetAppendBlobClient($"{finalBlobName}.{extension}");
-
-        IDictionary<string, string> blobMetadata = new Dictionary<string, string>()
-        {
-            [TimestampMetadataKey] = timestamp.ToString("O"),
-        };
-        if (blobName is null)
-        {
-            blobMetadata[FormatMetadataKey] = titledBlobNameFormat;
-        }
-
-        await blobClient.CreateAsync(
-            new AppendBlobCreateOptions()
-            {
-                Tags = new Dictionary<string, string>()
-                {
-                    [AnalysisIdTagKey] = analysisId.ToString("D"),
-                    [ExtensionTagKey] = extension,
-                },
-                Metadata = blobMetadata,
-            },
+        TaskUtils.RunAndForget(
+            () => CoreEndAnalyzeAsync(partialAnalysisResult, logContent, placeholders, CancellationToken.None),
             cancellationToken
         );
 
-        if (stream is not null)
-        {
-            await blobClient.AppendBlockAsync(stream, cancellationToken: cancellationToken);
-            await blobClient.SealAsync(cancellationToken: cancellationToken);
-        }
-
-        return blobClient;
+        return partialAnalysisResult;
     }
 
-    public async Task<string> AnalyzeAsync(
-        DateTime timestamp,
-        Guid analysisId,
-        string logContent,
-        IReadOnlyDictionary<string, object?> placeholderDict,
+    public async Task<IAnalysisResult> AnalyzeAsync(
+        Stream logStream,
+        Encoding logEncoding,
+        IReadOnlyDictionary<string, object?> placeholders,
+        DateTime? timestamp,
         CancellationToken cancellationToken
     )
     {
-#if NET || NETSTANDARD2_1_OR_GREATER
-        placeholderDict = new Dictionary<string, object?>(placeholderDict, StringComparer.OrdinalIgnoreCase)
+        (IPartialAnalysisResult partialAnalysisResult, string logContent) =
+            await CoreStartAnalyzeAsync(logStream, logEncoding, timestamp, cancellationToken);
+
+        return await CoreEndAnalyzeAsync(partialAnalysisResult, logContent, placeholders, cancellationToken);
+    }
+
+    private async Task<(IPartialAnalysisResult Result, string LogContent)> CoreStartAnalyzeAsync(
+        Stream logStream, Encoding logEncoding, DateTime? timestamp, CancellationToken cancellationToken
+    )
+    {
+        internalAnalysisService.LabelAnalysis(timestamp, out DateTime finalTimestamp, out Guid analysisId);
+
+        string logContent;
+        using (MemoryStream tempLogStream = new ())
         {
-            ["Timestamp"] = timestamp,
-            ["LogContent"] = logContent,
-        };
+            await logStream.CopyToAsync(tempLogStream, cancellationToken);
+
+            tempLogStream.Position = 0;
+            using (TextReader logTextReader =
+#if NET
+                new StreamReader(tempLogStream, logEncoding, leaveOpen: true)
 #else
-        {
-            Dictionary<string, object?> placeholderDict0 = new (StringComparer.OrdinalIgnoreCase)
+                new StreamReader(tempLogStream, logEncoding, true, 1024, true)
+#endif
+            )
             {
-                ["Timestamp"] = timestamp,
-                ["LogContent"] = logContent,
-            };
-            placeholderDict0.AddRange(placeholderDict);
-            placeholderDict = placeholderDict0;
-        }
-#endif
-
-        IEnumerable<ChatMessage> turn0Messages = MakeChatMessages(0, placeholderDict);
-        IAsyncEnumerable<StreamingChatCompletionUpdate> turn0CompletionUpdates =
-            chatClient.CompleteChatStreamingAsync(turn0Messages, cancellationToken: cancellationToken);
-
-        AppendBlobClient summaryBlobClient = await CreateBlobAsync(timestamp, analysisId, null, SummaryExtension, null, cancellationToken);
-
-        ICollection<ChatMessageContentPart> turn0ReplyMessageParts = new List<ChatMessageContentPart>();
-#if NET || NETSTANDARD2_1_OR_GREATER
-        await using
-#else
-        using
-#endif
-            (Stream summaryStream = await summaryBlobClient.OpenWriteAsync(false, cancellationToken: cancellationToken))
-#if NET || NETSTANDARD2_1_OR_GREATER
-        await using
-#else
-        using
-#endif
-            (TextWriter summaryWriter = new StreamWriter(summaryStream, Encoding.UTF8))
-        {
-            await foreach (StreamingChatCompletionUpdate completionUpdate in turn0CompletionUpdates)
-            {
-                if (completionUpdate.ContentUpdate is [ var replyMessagePart, .. ])
-                {
-                    turn0ReplyMessageParts.Add(replyMessagePart);
-                    await summaryWriter.WriteAsync(replyMessagePart.Text);
-                }
-            }
-        }
-
-        IEnumerable<ChatMessage> turn1Messages = turn0Messages
-            .Append(new AssistantChatMessage(turn0ReplyMessageParts))
-            .Concat(MakeChatMessages(1, placeholderDict));
-        IAsyncEnumerable<StreamingChatCompletionUpdate> turn1CompletionUpdates =
-            chatClient.CompleteChatStreamingAsync(turn1Messages, cancellationToken: cancellationToken);
-
-        string title;
-#if NET || NETSTANDARD2_1_OR_GREATER
-        await using
-#else
-        using
-#endif
-            (StringWriter titleWriter = new ())
-        {
-            await foreach (StreamingChatCompletionUpdate completionUpdate in turn1CompletionUpdates)
-            {
-                if (completionUpdate.ContentUpdate is [ var replyChatMessagePart, .. ])
-                {
-                    await titleWriter.WriteAsync(replyChatMessagePart.Text);
-                }
+                logContent = await logTextReader.ReadToEndAsync(cancellationToken);
             }
 
-            title = titleWriter.ToString();
+            tempLogStream.Position = 0;
+            await internalAnalysisService.WriteLogAsync(finalTimestamp, analysisId, tempLogStream, cancellationToken);
         }
 
-        return title;
+        IPartialAnalysisResult partialAnalysisResult = new PartialAnalysisResult(this, analysisId, finalTimestamp);
+
+        return (partialAnalysisResult, logContent);
     }
 
-    private IEnumerable<ChatMessage> MakeChatMessages(int turn, IReadOnlyDictionary<string, object?> placeholderDict)
+    private async Task<IAnalysisResult> CoreEndAnalyzeAsync(
+        IPartialAnalysisResult partialAnalysisResult,
+        string logContent,
+        IReadOnlyDictionary<string, object?> placeholders,
+        CancellationToken cancellationToken
+    )
     {
-        return YMessageGroups[turn].Select(m => ReplacePlaceholders(m, placeholderDict)).ToArray();
+        DateTime timestamp = partialAnalysisResult.Timestamp;
+        Guid analysisId = partialAnalysisResult.Id;
 
-        static ChatMessage ReplacePlaceholders(YMessage yMessage, IReadOnlyDictionary<string, object?> dict)
-        {
-            string content = yMessage.Content;
+        string title = await internalAnalysisService.AnalyzeAsync(timestamp, analysisId, logContent, placeholders, cancellationToken);
+        await internalAnalysisService.ConsolidateAsync(analysisId, title, cancellationToken);
 
-            while (GoodPlaceholderRegex.Match(content) is { Success: true } placeholderMatch)
-            {
-                string placeholderName = placeholderMatch.Groups[1].Value;
-                if (!dict.TryGetValue(placeholderName, out object? placeholderValue))
-                {
-                    throw new ArgumentException($"Placeholder value for '{placeholderName}' not available");
-                }
-
-                string placeholderFormat = $"{{0{placeholderMatch.Groups[2].Value}{placeholderMatch.Groups[3].Value}}}";
-                string placeholderText = string.Format(CultureInfo.InvariantCulture, placeholderFormat, placeholderValue);
-
-                content = $"{content[..placeholderMatch.Index]}{placeholderText}{content[(placeholderMatch.Index + placeholderMatch.Length)..]}";
-            }
-
-            if (BadPlaceholderRegex.IsMatch(content))
-            {
-                throw new ArgumentException("Bad placeholder found");
-            }
-
-            content = content.Replace("%%", "%");
-
-            return yMessage.Role switch
-            {
-                YMessageRole.System => new SystemChatMessage(content),
-                YMessageRole.User => new UserChatMessage(content),
-                _ => throw new ArgumentOutOfRangeException("Invalid message type", (Exception?)null),
-            };
-        }
+        return new AnalysisResult(this, analysisId, timestamp, title);
     }
 
-    public Task ConsolidateAsync(Guid analysisId, string title, CancellationToken cancellationToken)
+    public Task<string?> TryGetTitleAsync(Guid analysisId, CancellationToken cancellationToken)
     {
-        async Task CoreConsolidateAsync(string extension)
-        {
-            BlobClient sourceBlobClient = (await TryGetBlobClientAsync(analysisId, extension, cancellationToken))!;
-            IDictionary<string, string> sourceMetadata = (await sourceBlobClient.GetPropertiesAsync(cancellationToken: cancellationToken)).Value.Metadata;
-
-            DateTime timestamp = DateTime.ParseExact(sourceMetadata[TimestampMetadataKey], "O", CultureInfo.InvariantCulture);
-            string blobNameFormat = sourceMetadata[FormatMetadataKey];
-
-            string targetBlobName = string.Format(CultureInfo.InvariantCulture, blobNameFormat, timestamp, analysisId, title);
-            if ($"{targetBlobName}.{extension}" != sourceBlobClient.Name)
-            {
-#if NET || NETSTANDARD2_1_OR_GREATER
-                await using
-#else
-                using
-#endif
-                    Stream sourceStream = await sourceBlobClient.OpenReadAsync(cancellationToken: cancellationToken);
-                _ = await CreateBlobAsync(timestamp, analysisId, targetBlobName, extension, sourceStream, cancellationToken);
-            }
-        }
-
-        return Task.WhenAll(CoreConsolidateAsync(LogExtension), CoreConsolidateAsync(SummaryExtension));
+        return internalAnalysisService.TryGetTitleAsync(analysisId, cancellationToken);
     }
 
-    public Task<Stream?> TryGetLogStreamAsync(Guid analysisId, CancellationToken cancellationToken)
+    public Task<(Stream Stream, Encoding Encoding)?> TryGetLogAsync(Guid analysisId, CancellationToken cancellationToken)
     {
-        return TryGetBlobStreamAsync(analysisId, LogExtension, cancellationToken);
+        return internalAnalysisService.TryGetLogAsync(analysisId, cancellationToken);
     }
 
-    public Task<Stream?> TryGetSummaryStreamAsync(Guid analysisId, CancellationToken cancellationToken)
+    public Task<(Stream Stream, Encoding Encoding)?> TryGetSummaryAsync(Guid analysisId, CancellationToken cancellationToken)
     {
-        return TryGetBlobStreamAsync(analysisId, SummaryExtension, cancellationToken);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private async Task<Stream?> TryGetBlobStreamAsync(Guid analysisId, string extension, CancellationToken cancellationToken)
-    {
-        return await TryGetBlobClientAsync(analysisId, extension, cancellationToken) is { } blobClient
-            ? await blobClient.OpenReadAsync(cancellationToken: cancellationToken)
-            : null;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private async Task<BlobClient?> TryGetBlobClientAsync(Guid analysisId, string extension, CancellationToken cancellationToken)
-    {
-        return await blobContainerClient
-            .FindBlobsByTagsAsync($"\"{AnalysisIdTagKey}\"='{analysisId:D}' AND \"{ExtensionTagKey}\"='{extension}'", cancellationToken)
-            .FirstOrDefaultAsync(cancellationToken: cancellationToken) is { } blobItem
-            ? blobContainerClient.GetBlobClient(blobItem.BlobName)
-            : null;
-    }
-
-    [UsedImplicitly(ImplicitUseKindFlags.Assign)]
-    private sealed class YMessage
-    {
-        private string? content;
-
-        public YMessageRole? Role { get; set; }
-
-        [AllowNull]
-        public string Content
-        {
-            get => content ?? throw new InvalidOperationException($"{nameof(Content)} is unset");
-            set => content = string.IsNullOrEmpty(value) ? throw new ArgumentNullException(nameof(Content)) : value;
-        }
-    }
-
-    private enum YMessageRole
-    {
-        User,
-        System,
+        return internalAnalysisService.TryGetSummaryAsync(analysisId, cancellationToken);
     }
 }
