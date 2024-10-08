@@ -28,7 +28,7 @@ public class AnalysisController : ControllerBase
 
     [HttpPost]
     [Consumes("multipart/form-data")]
-    [Produces(MediaTypeNames.Text.Plain, Type = typeof(Guid))]
+    [Produces(MediaTypeNames.Application.Json, Type = typeof(IPartialAnalysisResult))]
     public async Task<IActionResult> Analyze(
         [FromForm(Name = LogFormPartName)] IFormFile? logFile,
         [FromForm(Name = PlaceholdersFormPartName)] IFormFile? placeholdersFile,
@@ -85,7 +85,7 @@ public class AnalysisController : ControllerBase
             partialAnalysisResult = await analysisService.StartAnalyzeAsync(logStream, logEncoding, placeholders, timestamp, cancellationToken);
         }
 
-        return new OkObjectResult(partialAnalysisResult.Id.ToString("D")) { ContentTypes = { MediaTypeNames.Text.Plain } };
+        return new OkObjectResult(partialAnalysisResult) { ContentTypes = { MediaTypeNames.Application.Json } };
     }
 
     [HttpGet]

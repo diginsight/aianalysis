@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0;net7.0;net8.0</TargetFrameworks>
+    <Title>Diginsight AI Analysis extensions for ASP.NET Core</Title>
+    <PackageTags>$(PackageTags);aspnetcore</PackageTags>
+  </PropertyGroup>
+
+  <Choose>
+    <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">
+      <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <!--<PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.2.*">
+          <PrivateAssets>contentfiles; analyzers; build; compile</PrivateAssets>
+        </PackageReference>-->
+        <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.*">
+          <PrivateAssets>contentfiles; analyzers; build; compile</PrivateAssets>
+        </PackageReference>
+        <!--<PackageReference Include="Microsoft.AspNetCore.Routing" Version="2.2.*">
+          <PrivateAssets>contentfiles; analyzers; build; compile</PrivateAssets>
+        </PackageReference>-->
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
+  <ItemGroup>
+    <PackageReference Include="Diginsight.Diagnostics" Version="$(DiginsightCoreVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Diginsight.AIAnalysis\Diginsight.AIAnalysis.csproj" />
+  </ItemGroup>
+
+</Project>
