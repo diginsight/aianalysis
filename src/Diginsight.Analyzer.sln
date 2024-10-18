@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35327.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{60B3BC2D-0BFF-4E21-A9E8-696E58F35443}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Diginsight.Analyzer.Common", "Diginsight.Analyzer.Common\Diginsight.Analyzer.Common.csproj", "{CF23C843-06B5-4DD2-8B87-2EC89AE9D61A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diginsight.Analyzer.Entities", "Diginsight.Analyzer.Entities\Diginsight.Analyzer.Entities.csproj", "{F90C9523-A3BA-4FD6-98A0-387CF264A660}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diginsight.Analyzer.Repositories.Abstractions", "Diginsight.Analyzer.Repositories.Abstractions\Diginsight.Analyzer.Repositories.Abstractions.csproj", "{B9B8C51D-A6FE-49C3-AC1C-F442A9C743D5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diginsight.Analyzer.Repositories", "Diginsight.Analyzer.Repositories\Diginsight.Analyzer.Repositories.csproj", "{BEB8C657-733D-43F4-8761-E4629BB52D42}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CF23C843-06B5-4DD2-8B87-2EC89AE9D61A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF23C843-06B5-4DD2-8B87-2EC89AE9D61A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF23C843-06B5-4DD2-8B87-2EC89AE9D61A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF23C843-06B5-4DD2-8B87-2EC89AE9D61A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F90C9523-A3BA-4FD6-98A0-387CF264A660}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F90C9523-A3BA-4FD6-98A0-387CF264A660}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F90C9523-A3BA-4FD6-98A0-387CF264A660}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F90C9523-A3BA-4FD6-98A0-387CF264A660}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9B8C51D-A6FE-49C3-AC1C-F442A9C743D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9B8C51D-A6FE-49C3-AC1C-F442A9C743D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9B8C51D-A6FE-49C3-AC1C-F442A9C743D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9B8C51D-A6FE-49C3-AC1C-F442A9C743D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BEB8C657-733D-43F4-8761-E4629BB52D42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEB8C657-733D-43F4-8761-E4629BB52D42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BEB8C657-733D-43F4-8761-E4629BB52D42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BEB8C657-733D-43F4-8761-E4629BB52D42}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {78852E03-4424-474F-960E-B00DDA15AFA1}
+	EndGlobalSection
+EndGlobal

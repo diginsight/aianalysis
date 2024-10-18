@@ -18,7 +18,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Diginsight.AIAnalysis", "Di
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Diginsight.AIAnalysis.API", "Diginsight.AIAnalysis.API\Diginsight.AIAnalysis.API.csproj", "{139B2B8A-769A-4319-BF1E-1F0ACD4EB5B1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diginsight.AIAnalysis.AspNetCore", "Diginsight.AIAnalysis.AspNetCore\Diginsight.AIAnalysis.AspNetCore.csproj", "{4C71ED09-C69E-4D8E-9CAB-351AC19BB3DA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Diginsight.AIAnalysis.AspNetCore", "Diginsight.AIAnalysis.AspNetCore\Diginsight.AIAnalysis.AspNetCore.csproj", "{4C71ED09-C69E-4D8E-9CAB-351AC19BB3DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,6 +1,14 @@
 <Project>
 
   <PropertyGroup>
+    <RootNamespace Condition="$(RootNamespace.EndsWith('.Abstractions'))">$(RootNamespace.Replace('.Abstractions', ''))</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(AssemblyName.EndsWith('.Tests'))">
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <IsPackable Condition="'$(IsPackable)' == ''">true</IsPackable>
   </PropertyGroup>
 
