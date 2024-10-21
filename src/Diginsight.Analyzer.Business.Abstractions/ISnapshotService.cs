@@ -9,7 +9,7 @@ public interface ISnapshotService
 
     Task<(IEnumerable<AnalysisContextSnapshot> Items, int TotalCount)> GetQueuedAnalysesAsync(int page, int? pageSize);
 
-    Task<AnalysisContextSnapshot?> GetMigrationAsync(Guid executionId, bool withProgress);
+    Task<AnalysisContextSnapshot?> GetAnalysisAsync(Guid executionId, bool withProgress);
 
-    Task<AnalysisContextSnapshot?> GetMigrationAsync(AnalysisCoord analysisCoord, bool withProgress);
+    Task<AnalysisContextSnapshot?> GetAnalysisAsync(AnalysisCoord analysisCoord, bool withProgress);
 }

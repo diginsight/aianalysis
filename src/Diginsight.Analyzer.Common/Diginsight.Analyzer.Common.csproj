@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Diginsight.Diagnostics" Version="$(DiginsightCoreVersion)" />
+    <PackageReference Include="System.Linq.Async" Version="6.*" />
   </ItemGroup>
 
 </Project>

@@ -51,6 +51,11 @@
         "resolved": "3.0.0-alpha.206",
         "contentHash": "Vq3vwI8SBtedgeuC11s7wv02C8US7/a/P7jdYCtemrIPlwaSBNkeI/a7aYmUFGvx1enndUIsw1ZBuY+jFviTag=="
       },
+      "Microsoft.Bcl.AsyncInterfaces": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "UcSjPsst+DfAdJGVDsu346FX0ci0ah+lw3WRtn18NUwEqRt70HaOQ7lI72vy3+1LxtqI3T5GWwV39rQSrCzAeg=="
+      },
       "Microsoft.Build.Tasks.Git": {
         "type": "Transitive",
         "resolved": "8.0.0",
@@ -272,6 +277,14 @@
         "resolved": "8.0.0",
         "contentHash": "c9xLpVz6PL9lp/djOWtk5KPDZq3cSYpmXoJQY524EOtuFl5z9ZtsotpsyrDW40U1DRnQSYvcPKEUV0X//u6gkQ=="
       },
+      "System.Linq.Async": {
+        "type": "Transitive",
+        "resolved": "6.0.1",
+        "contentHash": "0YhHcaroWpQ9UCot3Pizah7ryAzQhNvobLMSxeDIGmnXfkQn8u5owvpOH0K6EVB+z9L7u6Cc4W17Br/+jyttEQ==",
+        "dependencies": {
+          "Microsoft.Bcl.AsyncInterfaces": "6.0.0"
+        }
+      },
       "System.Memory": {
         "type": "Transitive",
         "resolved": "4.5.4",
@@ -299,7 +312,8 @@
         "type": "Project",
         "dependencies": {
           "Diginsight.Diagnostics": "[3.0.0-alpha.206, )",
-          "JetBrains.Annotations": "[2024.*, )"
+          "JetBrains.Annotations": "[2024.*, )",
+          "System.Linq.Async": "[6.*, )"
         }
       },
       "diginsight.analyzer.entities": {

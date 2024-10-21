@@ -31,6 +31,15 @@
           "Microsoft.SourceLink.Common": "8.0.0"
         }
       },
+      "System.Linq.Async": {
+        "type": "Direct",
+        "requested": "[6.*, )",
+        "resolved": "6.0.1",
+        "contentHash": "0YhHcaroWpQ9UCot3Pizah7ryAzQhNvobLMSxeDIGmnXfkQn8u5owvpOH0K6EVB+z9L7u6Cc4W17Br/+jyttEQ==",
+        "dependencies": {
+          "Microsoft.Bcl.AsyncInterfaces": "6.0.0"
+        }
+      },
       "Diginsight.Core": {
         "type": "Transitive",
         "resolved": "3.0.0-alpha.206",
@@ -51,6 +60,11 @@
         "type": "Transitive",
         "resolved": "3.0.0-alpha.206",
         "contentHash": "Vq3vwI8SBtedgeuC11s7wv02C8US7/a/P7jdYCtemrIPlwaSBNkeI/a7aYmUFGvx1enndUIsw1ZBuY+jFviTag=="
+      },
+      "Microsoft.Bcl.AsyncInterfaces": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "UcSjPsst+DfAdJGVDsu346FX0ci0ah+lw3WRtn18NUwEqRt70HaOQ7lI72vy3+1LxtqI3T5GWwV39rQSrCzAeg=="
       },
       "Microsoft.Build.Tasks.Git": {
         "type": "Transitive",
