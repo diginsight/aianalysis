@@ -4,8 +4,8 @@ namespace Diginsight.Analyzer.Entities.Events;
 
 public class StepCustomEvent : StepEvent
 {
-    public override EventKind EventKind => EventKind.StepCustom;
-
     [JsonConstructor]
     protected StepCustomEvent() { }
+
+    public override EventKind EventKind => EventKind.StepCustom;
 }

@@ -9,7 +9,7 @@ public interface IAnalysisInfoRepository
 
     Task UpsertAsync(IAnalysisContext analysisContext);
 
-    Task DeleteAsync(AnalysisCoordinate coordinate, string persistenceId);
+    Task DeleteAsync(Guid executionId);
 
     IDisposable? StartTimedProgressFlush(IAnalysisContext analysisContext);
 
@@ -17,7 +17,9 @@ public interface IAnalysisInfoRepository
 
     Task<(IEnumerable<AnalysisContextSnapshot> Items, int TotalCount)> GetQueuedAnalysisSnapshotsAsync(int page, int pageSize);
 
-    Task<AnalysisContextSnapshot?> GetAnalysisSnapshotAsync(AnalysisCoordinate coordinate, bool withProgress);
+    Task<AnalysisContextSnapshot?> GetAnalysisSnapshotAsync(Guid executionId, bool withProgress);
+
+    Task<AnalysisContextSnapshot?> GetAnalysisSnapshotAsync(AnalysisCoord analysisCoord, bool withProgress);
 
     IAsyncEnumerable<AnalysisContextSnapshot> GetAllQueuedAnalysisSnapshotsAE();
 }

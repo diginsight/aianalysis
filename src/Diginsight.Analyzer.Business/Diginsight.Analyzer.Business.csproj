@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Diginsight.Analyzer.Entities\Diginsight.Analyzer.Entities.csproj" />
+    <ProjectReference Include="..\Diginsight.Analyzer.Business.Abstractions\Diginsight.Analyzer.Business.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

@@ -17,6 +17,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diginsight.Analyzer.Reposit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diginsight.Analyzer.Repositories", "Diginsight.Analyzer.Repositories\Diginsight.Analyzer.Repositories.csproj", "{BEB8C657-733D-43F4-8761-E4629BB52D42}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diginsight.Analyzer.Business.Abstractions", "Diginsight.Analyzer.Business.Abstractions\Diginsight.Analyzer.Business.Abstractions.csproj", "{0384EAE7-828E-4266-BAC9-6D1E90521D28}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diginsight.Analyzer.Business", "Diginsight.Analyzer.Business\Diginsight.Analyzer.Business.csproj", "{DFE4BD45-995D-4EC8-B5FF-9D02A009CBA8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,14 @@ Global
 		{BEB8C657-733D-43F4-8761-E4629BB52D42}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BEB8C657-733D-43F4-8761-E4629BB52D42}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BEB8C657-733D-43F4-8761-E4629BB52D42}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0384EAE7-828E-4266-BAC9-6D1E90521D28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0384EAE7-828E-4266-BAC9-6D1E90521D28}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0384EAE7-828E-4266-BAC9-6D1E90521D28}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0384EAE7-828E-4266-BAC9-6D1E90521D28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DFE4BD45-995D-4EC8-B5FF-9D02A009CBA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFE4BD45-995D-4EC8-B5FF-9D02A009CBA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DFE4BD45-995D-4EC8-B5FF-9D02A009CBA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DFE4BD45-995D-4EC8-B5FF-9D02A009CBA8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

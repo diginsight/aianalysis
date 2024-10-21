@@ -1,20 +1,13 @@
-﻿using Diginsight.Analyzer.Common.Annotations;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+﻿using Newtonsoft.Json;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Diginsight.Analyzer.Entities;
 
-[Serialized]
-public sealed class StepHistory : ITimeBoundWithTeardown
+public sealed class StepHistory : StepInstance, ITimeBoundWithTeardown
 {
     [JsonConstructor]
-    public StepHistory(string name)
-    {
-        Name = name;
-    }
-
-    public string Name { get; }
+    public StepHistory(string template, string internalName, string displayName, StepInput input)
+        : base(template, internalName, displayName, input) { }
 
     [DisallowNull]
     public DateTime? StartedAt { get; set; }
@@ -28,6 +21,5 @@ public sealed class StepHistory : ITimeBoundWithTeardown
     [DisallowNull]
     public DateTime? TeardownFinishedAt { get; set; }
 
-    [JsonConverter(typeof(StringEnumConverter))]
     public TimeBoundStatus Status { get; set; }
 }

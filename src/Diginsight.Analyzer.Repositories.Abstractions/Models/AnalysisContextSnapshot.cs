@@ -5,12 +5,27 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Diginsight.Analyzer.Repositories.Models;
 
-public sealed class AnalysisContextSnapshot
+public sealed class AnalysisContextSnapshot : ExecutionContextSnapshot
 {
-    [JsonProperty("id")]
-    public string Id { get; init; } = null!;
+    [JsonConstructor]
+    internal AnalysisContextSnapshot(Guid id, Guid analysisId, int attempt)
+        : base(id)
+    {
+        AnalysisId = analysisId;
+        Attempt = attempt;
+        AnalysisCoord = new AnalysisCoord(analysisId, attempt);
+    }
 
-    public AnalysisCoordinate Coordinate { get; }
+    public Guid AnalysisId { get; }
+
+    public int Attempt { get; }
+
+    [JsonIgnore]
+    public AnalysisCoord AnalysisCoord { get; }
+
+    public string? AgentName { get; init; }
+
+    public string AgentPool { get; init; } = null!;
 
     public DateTime? QueuedAt { get; init; }
 
@@ -18,29 +33,15 @@ public sealed class AnalysisContextSnapshot
 
     public DateTime? FinishedAt { get; init; }
 
-    public bool IsFailed { get; init; }
+    public GlobalInput GlobalInput { get; init; } = null!;
 
-    [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
-    public Exception? Exception { get; init; }
-
-    public string? Reason { get; init; }
-
-    public DequeuingInfo? DequeuingInfo { get; init; }
-
-    public AnalysisInfo AnalysisInfo { get; init; } = null!;
-
-    public IEnumerable<StepHistory> StepHistories { get; init; } = null!;
+    public IEnumerable<StepHistory> Steps { get; init; } = null!;
 
     [JsonConverter(typeof(StringEnumConverter))]
+    [JsonProperty("status")]
     public TimeBoundStatus Status { get; init; }
 
     [DisallowNull]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public AnalysisProgress? Progress { get; set; }
-
-    [JsonConstructor]
-    internal AnalysisContextSnapshot(Guid analysisId, int attempt)
-    {
-        Coordinate = new AnalysisCoordinate(analysisId, attempt);
-    }
+    public Progress? Progress { get; set; }
 }

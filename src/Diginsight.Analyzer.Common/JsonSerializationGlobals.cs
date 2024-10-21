@@ -1,5 +1,6 @@
 ﻿using JetBrains.Annotations;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using System.Runtime.CompilerServices;
 
@@ -23,18 +24,15 @@ public static class JsonSerializationGlobals
         JsonConvert.DefaultSettings = () => settings;
     }
 
-    private static void Adjust(JsonSerializerSettings settings, DefaultContractResolver plainContractResolver)
+    private static void Adjust(JsonSerializerSettings settings, IContractResolver contractResolver)
     {
-        IContractResolver initialContractResolver = plainContractResolver;
-
         settings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
 
-        settings.ContractResolver = new CustomContractResolver(initialContractResolver);
-
-        CamelCaseNamingStrategy namingStrategy = new () { OverrideSpecifiedNames = false };
-        plainContractResolver.NamingStrategy = namingStrategy;
+        settings.ContractResolver = new CustomContractResolver(contractResolver);
 
         settings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+
+        settings.Converters.Add(new StringEnumConverter());
     }
 
     private sealed class CustomContractResolver : IContractResolver

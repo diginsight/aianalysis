@@ -1,23 +1,23 @@
 ﻿namespace Diginsight.Analyzer.Entities;
 
-public interface IAnalysisContext : ITimeBound, IFailable
+public interface IAnalysisContext : IExecutionContext, ITimeBound
 {
-    Guid PersistenceId { get; }
+    AnalysisCoord AnalysisCoord { get; }
 
-    AnalysisCoordinate Coordinate { get; }
+    string AgentName { get; }
+
+    string AgentPool { get; }
 
     DateTime? QueuedAt { get; }
 
     DateTime StartedAt { get; }
 
-    AnalysisInfo AnalysisInfo { get; }
+    GlobalInput GlobalInput { get; }
 
-    IEnumerable<StepHistory> StepHistories { get; }
+    IEnumerable<StepHistory> Steps { get; }
+
+    StepHistory GetStep(string internalName);
 
     T GetProgress<T>()
-        where T : AnalysisProgress, new();
-
-    StepHistory GetStepHistory(string stepName);
-
-    bool IsNotStarted();
+        where T : Progress, new();
 }

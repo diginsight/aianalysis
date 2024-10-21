@@ -1,6 +1,5 @@
 ﻿using Diginsight.Analyzer.Common.Annotations;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace Diginsight.Analyzer.Entities;
 
@@ -14,7 +13,6 @@ public sealed class Problem
         Exception = exception;
     }
 
-    [JsonConverter(typeof(StringEnumConverter))]
     public ProblemKind Kind { get; }
 
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

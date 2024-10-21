@@ -3,4 +3,4 @@
 namespace Diginsight.Analyzer.Entities;
 
 [Serialized]
-public interface IAnalysisProgress : IExpandable<AnalysisProgress>;
+public interface IProgress : IExpandable<Progress>;
